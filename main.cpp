@@ -24,12 +24,16 @@ private:
     deque<Point> snake;
     Direction dir;
     bool gameOver;
+    int score;
 
 public:
     SnakeGame() {
+        score = 1;
         gameOver = false;
         snake.push_back({WIDTH / 2, HEIGHT / 2});
         dir = UP;
+        food.x = 1 + (rand() % WIDTH - 1);
+        food.y = 1 + (rand() % HEIGHT - 1);
     }
 
     void input() {
@@ -39,8 +43,7 @@ public:
         else if (ch == 'd' && dir != LEFT) dir = RIGHT;
         else if (ch == 'w' && dir != DOWN) dir = UP;
         else if (ch == 's' && dir != UP) dir = DOWN;
-        else if (ch == 27) gameOver = true;
-        
+        else if (ch == 27) endwin();
     }
 
     void move() {
@@ -60,8 +63,21 @@ public:
                 head.y += 1;
                 break;
         }
+        snake.pop_front();
         snake.push_front(head);
-        snake.pop_back();
+    }
+
+    void checkDeath() {
+        if (snake.front().x == 0 || snake.front().x == WIDTH - 1 || snake.front().y == 0 || snake.front().y == HEIGHT - 1) {
+            gameOver = true;
+        }
+    }
+
+    void spawnFood() {
+        if (snake.front().x == food.x && snake.front().y == food.y) {
+            food.x = 1 + (rand() % WIDTH - 1);
+            food.y = 1 + (rand() % HEIGHT - 1);
+        }
     }
 
     void draw() {
@@ -72,6 +88,8 @@ public:
                 if (y == 0 || y == HEIGHT - 1 || x == 0 || x == WIDTH - 1) {
                     printw("#");
                 } else if (snake.front().x == x && snake.front().y == y) {
+                    printw("*");
+                } else if (food.x == x && food.y == y) {
                     printw("O");
                 } else {
                     printw(" ");
@@ -89,11 +107,15 @@ public:
         timeout(0);
 
         while (!gameOver) {
+            checkDeath();
+            spawnFood();
             draw();
-            this_thread::sleep_for(chrono::milliseconds(400));
+            this_thread::sleep_for(chrono::milliseconds(300));
             input();
             move();
         }
+        timeout(-1);
+        getch();
         endwin();
     }
 };
