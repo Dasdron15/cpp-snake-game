@@ -18,7 +18,7 @@ struct Point {
 };
 
 class SnakeGame {
-private:
+    private:
     Point food;
     Point head;
     deque<Point> snake;
@@ -32,8 +32,7 @@ public:
         gameOver = false;
         snake.push_back({WIDTH / 2, HEIGHT / 2});
         dir = UP;
-        food.x = 1 + (rand() % WIDTH - 1);
-        food.y = 1 + (rand() % HEIGHT - 1);
+        spawnFood();
     }
 
     void input() {
@@ -63,8 +62,8 @@ public:
                 head.y += 1;
                 break;
         }
-        snake.pop_front();
         snake.push_front(head);
+        snake.pop_back();
     }
 
     void checkDeath() {
@@ -75,14 +74,14 @@ public:
 
     void spawnFood() {
         if (snake.front().x == food.x && snake.front().y == food.y) {
-            food.x = 1 + (rand() % WIDTH - 1);
-            food.y = 1 + (rand() % HEIGHT - 1);
+            score += 1;
+            food.x = 1 + (rand() % WIDTH - 2);
+            food.y = 1 + (rand() % HEIGHT - 2);
         }
     }
 
     void draw() {
         clear();
-
         for (int y = 0; y < HEIGHT; y++) {
             for (int x = 0; x < WIDTH; x++) {
                 if (y == 0 || y == HEIGHT - 1 || x == 0 || x == WIDTH - 1) {
@@ -98,6 +97,7 @@ public:
             printw("\n");
             refresh();
         }
+        mvprintw(HEIGHT, 0, "Your score is: 6");
     }
 
     void run() {
@@ -115,6 +115,7 @@ public:
             move();
         }
         timeout(-1);
+        mvprintw(HEIGHT + 1, 0, "Game over! Press any key to exit.");
         getch();
         endwin();
     }
