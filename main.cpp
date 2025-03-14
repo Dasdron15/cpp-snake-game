@@ -1,14 +1,15 @@
-#include <iostream>
+#include <cctype>
 #include <cstdlib>
 #include <ctime>
 #include <deque>
-#include <termios.h>
-#include <unistd.h>
+#include <ncurses.h>
+#include <chrono>
+#include <thread>
 
 using namespace std;
 
-const int WIDTH = 20;
-const int HEIGHT = 10;
+const int WIDTH = 30;
+const int HEIGHT = 15;
 
 enum Direction {UP, DOWN, LEFT, RIGHT};
 
@@ -19,6 +20,7 @@ struct Point {
 class SnakeGame {
 private:
     Point food;
+    Point head;
     deque<Point> snake;
     Direction dir;
     bool gameOver;
@@ -27,55 +29,72 @@ public:
     SnakeGame() {
         gameOver = false;
         snake.push_back({WIDTH / 2, HEIGHT / 2});
-    }
-
-    char getKey() {
-        struct termios oldt, newt;
-        char ch;
-        tcgetattr(STDIN_FILENO, &oldt);  // Сохранение текущих настроек терминала
-        newt = oldt;
-        newt.c_lflag &= ~(ICANON | ECHO);  // Отключаем буферизацию и эхо-вывод
-        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-        ch = getchar();
-        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);  // Восстановление настроек
-        return ch;
+        dir = UP;
     }
 
     void input() {
-        if (getKey() == 'a') {
-            snake.front().x -= 1;
-        } else if (getKey() == 'd') {
-            snake.front().x += 1;
-        } else if (getKey() == 'w') {
-            snake.front().y -= 1;
-        } else if (getKey() == 's') {
-            snake.front().y += 1;
+        int ch = tolower(getch());
+
+        if (ch == 'a' && dir != RIGHT) dir = LEFT;
+        else if (ch == 'd' && dir != LEFT) dir = RIGHT;
+        else if (ch == 'w' && dir != DOWN) dir = UP;
+        else if (ch == 's' && dir != UP) dir = DOWN;
+        else if (ch == 27) gameOver = true;
+        
+    }
+
+    void move() {
+        head = snake.front();
+
+        switch (dir) {
+            case LEFT:
+                head.x -= 1;
+                break;
+            case RIGHT:
+                head.x += 1;
+                break;
+            case UP:
+                head.y -= 1;
+                break;
+            case DOWN:
+                head.y += 1;
+                break;
         }
+        snake.push_front(head);
+        snake.pop_back();
     }
 
     void draw() {
-        system("clear");
+        clear();
 
         for (int y = 0; y < HEIGHT; y++) {
             for (int x = 0; x < WIDTH; x++) {
                 if (y == 0 || y == HEIGHT - 1 || x == 0 || x == WIDTH - 1) {
-                    cout << "#";
+                    printw("#");
                 } else if (snake.front().x == x && snake.front().y == y) {
-                    cout << "O";
+                    printw("O");
                 } else {
-                    cout << " ";
+                    printw(" ");
                 }
             }
-            cout << endl;
+            printw("\n");
+            refresh();
         }
     }
 
     void run() {
+        initscr();
+        scrollok(stdscr, true);
+        noecho();
+        timeout(0);
+
         while (!gameOver) {
             draw();
+            this_thread::sleep_for(chrono::milliseconds(400));
             input();
+            move();
         }
-        cout << "Game Over!" << endl;
+        endwin();
     }
 };
 
