@@ -30,7 +30,7 @@ public:
         gameOver = false;
         snake.push_back({WIDTH / 2, HEIGHT / 2});
         dir = UP;
-        food.x = food.x = 1 + rand() % (WIDTH - 2);
+        food.x = 1 + rand() % (WIDTH - 2);
         food.y = 1 + rand() % (HEIGHT - 2);
     }
 
