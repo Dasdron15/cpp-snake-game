@@ -24,15 +24,14 @@ class SnakeGame {
     deque<Point> snake;
     Direction dir;
     bool gameOver;
-    int score;
 
 public:
     SnakeGame() {
-        score = 1;
         gameOver = false;
         snake.push_back({WIDTH / 2, HEIGHT / 2});
         dir = UP;
-        spawnFood();
+        food.x = food.x = 1 + rand() % (WIDTH - 2);
+        food.y = 1 + rand() % (HEIGHT - 2);
     }
 
     void input() {
@@ -42,7 +41,11 @@ public:
         else if (ch == 'd' && dir != LEFT) dir = RIGHT;
         else if (ch == 'w' && dir != DOWN) dir = UP;
         else if (ch == 's' && dir != UP) dir = DOWN;
-        else if (ch == 27) endwin();
+        else if (ch == 27) {
+            gameOver = true;
+            endwin();
+            exit(0);
+        }
     }
 
     void move() {
@@ -63,21 +66,29 @@ public:
                 break;
         }
         snake.push_front(head);
-        snake.pop_back();
+        
+        if (head.x == food.x && head.y == food.y) {
+            spawnFood();
+        } else {
+            snake.pop_back();
+        }
     }
 
     void checkDeath() {
+        for (int i = 1; i < snake.size(); i++) {
+            if (snake[i].x == snake.front().x && snake[i].y == snake.front().y) {
+                gameOver = true;
+                return;
+            }
+        }
         if (snake.front().x == 0 || snake.front().x == WIDTH - 1 || snake.front().y == 0 || snake.front().y == HEIGHT - 1) {
             gameOver = true;
         }
     }
 
     void spawnFood() {
-        if (snake.front().x == food.x && snake.front().y == food.y) {
-            score += 1;
-            food.x = 1 + (rand() % WIDTH - 2);
-            food.y = 1 + (rand() % HEIGHT - 2);
-        }
+        food.x = 1 + rand() % (WIDTH - 2);
+        food.y = 1 + rand() % (HEIGHT - 2);
     }
 
     void draw() {
@@ -91,13 +102,22 @@ public:
                 } else if (food.x == x && food.y == y) {
                     printw("O");
                 } else {
-                    printw(" ");
+                    bool isBody = false;
+                    for (const auto& p : snake) {
+                        if (x == p.x && y == p.y) {
+                            printw("*");
+                            isBody = true;
+                            break;
+                        }
+                    }
+                    if (!isBody) {
+                        printw(" ");
+                    }
                 }
             }
             printw("\n");
-            refresh();
         }
-        mvprintw(HEIGHT, 0, "Your score is: 6");
+        refresh();
     }
 
     void run() {
@@ -105,15 +125,16 @@ public:
         scrollok(stdscr, true);
         noecho();
         timeout(0);
+        srand(time(0));
 
         while (!gameOver) {
             checkDeath();
-            spawnFood();
             draw();
             this_thread::sleep_for(chrono::milliseconds(300));
             input();
             move();
         }
+
         timeout(-1);
         mvprintw(HEIGHT + 1, 0, "Game over! Press any key to exit.");
         getch();
@@ -122,7 +143,6 @@ public:
 };
 
 int main() {
-    srand(time(0));
     SnakeGame game;
     game.run();
     return 0;
